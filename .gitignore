@@ -1,0 +1,27 @@
+node_modules
+.env
+.env.*
+!.env.example
+dist
+.pgdata
+*.log
+.DS_Store
+.idea
+.vscode
+
+# Flutter / Dart
+.dart_tool/
+.packages
+.pub-cache/
+.pub/
+build/
+mobile/.flutter-plugins
+mobile/.flutter-plugins-dependencies
+mobile/android/.gradle/
+mobile/android/local.properties
+mobile/android/app/debug/
+mobile/android/app/profile/
+mobile/android/app/release/
+mobile/ios/Pods/
+mobile/ios/.symlinks/
+mobile/macos/Pods/
