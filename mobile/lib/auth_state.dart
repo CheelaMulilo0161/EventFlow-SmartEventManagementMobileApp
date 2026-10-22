@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -12,6 +14,7 @@ class AuthState extends ChangeNotifier {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
   static const _tokenKey = 'eventflow_token';
   static const _baseUrlKey = 'eventflow_api_base_url';
+  static const _userKey = 'eventflow_user';
 
   User? user;
   String? error;
@@ -33,11 +36,19 @@ class AuthState extends ChangeNotifier {
         api.token = token;
         try {
           user = await api.me();
+          await _saveUser();
         } catch (e) {
-          api.token = null;
-          await _storage.delete(key: _tokenKey);
-          if (e is ApiException && e.code != 'INVALID_TOKEN' && e.statusCode != 401) {
-            error = e.message;
+          final authFailure =
+              e is ApiException && (e.statusCode == 401 || e.code == 'INVALID_TOKEN');
+          if (authFailure) {
+            api.token = null;
+            await _storage.delete(key: _tokenKey);
+            await prefs.remove(_userKey);
+          } else {
+            user = _cachedUser(prefs);
+            error = e is ApiException
+                ? e.message
+                : 'Could not refresh your account. Showing saved details.';
           }
         }
       }
@@ -57,6 +68,7 @@ class AuthState extends ChangeNotifier {
       user = User.fromJson(data['user'] as Map<String, dynamic>);
       api.token = token;
       await _storage.write(key: _tokenKey, value: token);
+      await _saveUser();
       return true;
     } catch (e) {
       error = e is ApiException ? e.message : 'Could not log in. Try again.';
@@ -89,6 +101,7 @@ class AuthState extends ChangeNotifier {
       user = User.fromJson(data['user'] as Map<String, dynamic>);
       api.token = token;
       await _storage.write(key: _tokenKey, value: token);
+      await _saveUser();
       return true;
     } catch (e) {
       error = e is ApiException ? e.message : 'Could not create the account. Try again.';
@@ -103,6 +116,8 @@ class AuthState extends ChangeNotifier {
     user = null;
     api.token = null;
     await _storage.delete(key: _tokenKey);
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove(_userKey);
     notifyListeners();
   }
 
@@ -128,9 +143,26 @@ class AuthState extends ChangeNotifier {
     if (api.token == null) return;
     try {
       user = await api.me();
+      await _saveUser();
       notifyListeners();
     } catch (_) {
       // Keep the cached session; the next API call will surface a clear error.
+    }
+  }
+
+  Future<void> _saveUser() async {
+    if (user == null) return;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_userKey, jsonEncode(user!.toJson()));
+  }
+
+  User? _cachedUser(SharedPreferences prefs) {
+    final raw = prefs.getString(_userKey);
+    if (raw == null || raw.isEmpty) return null;
+    try {
+      return User.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+    } catch (_) {
+      return null;
     }
   }
 

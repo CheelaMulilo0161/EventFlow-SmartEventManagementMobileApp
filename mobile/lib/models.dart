@@ -46,6 +46,14 @@ class User {
       role: json['role'] as String? ?? 'attendee',
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'email': email,
+        'full_name': fullName,
+        'phone': phone,
+        'role': role,
+      };
 }
 
 class TicketType {

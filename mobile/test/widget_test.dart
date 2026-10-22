@@ -8,6 +8,24 @@ void main() {
     expect(formatMoney(0), 'ZMW 0.00');
   });
 
+  test('cached user survives a JSON round trip', () {
+    const user = User(
+      id: 'user-1',
+      email: 'attendee@eventflow.zm',
+      fullName: 'Demo Attendee',
+      phone: '+260970000001',
+      role: 'attendee',
+    );
+
+    final restored = User.fromJson(user.toJson());
+
+    expect(restored.id, user.id);
+    expect(restored.email, user.email);
+    expect(restored.fullName, user.fullName);
+    expect(restored.phone, user.phone);
+    expect(restored.role, user.role);
+  });
+
   test('event price label picks the cheapest ticket type', () {
     final event = Event.fromJson({
       'id': 'event-1',

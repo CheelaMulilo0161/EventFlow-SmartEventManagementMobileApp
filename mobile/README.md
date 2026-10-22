@@ -1,17 +1,32 @@
-# eventflow
+# EventFlow mobile
 
-A new Flutter project.
+Flutter Android client for the EventFlow ticketing platform.
 
-## Getting Started
+Features include event discovery, ticket reservation, simulated mobile-money checkout,
+QR tickets, offline ticket access, organizer sales dashboards, and camera or short-code
+check-in.
 
-This project is a starting point for a Flutter application.
+## Run
 
-A few resources to get you started if this is your first Flutter project:
+```powershell
+flutter pub get
+flutter run
+```
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+The API must be running and reachable from the phone or emulator. Set the server address
+from the login screen or Profile, or pass it at build time:
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```powershell
+flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000
+```
+
+## Build
+
+```powershell
+flutter analyze
+flutter test
+flutter build apk --release --split-per-abi
+```
+
+See [`../docs/SETUP.md`](../docs/SETUP.md) for the full backend, database, network, and
+troubleshooting guide.
