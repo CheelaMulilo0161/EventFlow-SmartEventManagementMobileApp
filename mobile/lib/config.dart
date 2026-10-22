@@ -1,7 +1,7 @@
 class AppConfig {
   static const String defaultApiBaseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'http://172.18.6.64:3000',
+    defaultValue: 'http://172.19.25.191:3000',
   );
 
   static const String appName = 'EventFlow';

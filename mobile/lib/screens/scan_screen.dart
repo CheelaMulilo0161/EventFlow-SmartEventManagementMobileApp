@@ -290,6 +290,13 @@ class _ScanScreenState extends State<ScanScreen> {
                       label: const Text('Scan next ticket'),
                     ),
                     const SizedBox(height: 16),
+                  ] else if (_error != null) ...[
+                    OutlinedButton.icon(
+                      onPressed: _processing ? null : _scanNext,
+                      icon: const Icon(Icons.qr_code_scanner),
+                      label: const Text('Resume camera'),
+                    ),
+                    const SizedBox(height: 16),
                   ],
                   Card(
                     child: Padding(
