@@ -1,12 +1,16 @@
 import { Router } from "express";
 import { pool } from "../db";
 import { requireAuth, requireRole } from "../auth/jwt";
+import { PLATFORM_ADMIN_ROLES } from "../auth/roles";
+import { writeAuditLog } from "../admin/audit";
 import { asyncHandler } from "../http/asyncHandler";
 import { AppError } from "../http/errors";
+import { param } from "../http/params";
+import { cancelEventAndRelease } from "../services/events";
 
 const router = Router();
 
-router.use(requireAuth, requireRole("admin"));
+router.use(requireAuth, requireRole(...PLATFORM_ADMIN_ROLES));
 
 router.get(
   "/stats",
@@ -66,13 +70,23 @@ router.get(
 router.post(
   "/events/:id/cancel",
   asyncHandler(async (req, res) => {
-    const result = await pool.query(
-      `UPDATE events SET status = 'cancelled', updated_at = now()
-       WHERE id = $1 RETURNING id`,
-      [req.params.id],
+    const eventId = param(req, "id");
+    const eventResult = await pool.query<{ title: string }>(
+      "SELECT title FROM events WHERE id = $1",
+      [eventId],
     );
-    if (!result.rows[0]) throw new AppError(404, "EVENT_NOT_FOUND", "Event not found");
-    res.json({ data: { cancelled: true } });
+    const cancelled = await cancelEventAndRelease(eventId);
+    await writeAuditLog({
+      actorId: req.user!.id,
+      actorEmail: req.user!.email,
+      actorRole: req.user!.role,
+      action: cancelled ? "event.cancelled" : "event.cancel_skipped",
+      targetType: "event",
+      targetId: eventId,
+      details: { title: eventResult.rows[0]?.title ?? null, source: "admin_api" },
+      ip: req.ip,
+    });
+    res.json({ data: { cancelled } });
   }),
 );
 
@@ -83,12 +97,38 @@ router.post(
     if (!["attendee", "organizer", "admin"].includes(role)) {
       throw new AppError(400, "INVALID_ROLE", "Role must be attendee, organizer or admin");
     }
+    const target = await pool.query<{ role: string }>(
+      "SELECT role FROM users WHERE id = $1",
+      [req.params.id],
+    );
+    if (!target.rows[0]) throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    if (target.rows[0].role === "super_admin") {
+      throw new AppError(
+        403,
+        "FORBIDDEN",
+        "Super admin accounts can only be managed from the web dashboard",
+      );
+    }
     const result = await pool.query(
       `UPDATE users SET role = $1 WHERE id = $2
        RETURNING id, email, full_name, role`,
       [role, req.params.id],
     );
-    if (!result.rows[0]) throw new AppError(404, "USER_NOT_FOUND", "User not found");
+    await writeAuditLog({
+      actorId: req.user!.id,
+      actorEmail: req.user!.email,
+      actorRole: req.user!.role,
+      action: "user.role_changed",
+      targetType: "user",
+      targetId: String(req.params.id),
+      details: {
+        email: result.rows[0].email,
+        from: target.rows[0].role,
+        to: role,
+        source: "admin_api",
+      },
+      ip: req.ip,
+    });
     res.json({ data: { user: result.rows[0] } });
   }),
 );

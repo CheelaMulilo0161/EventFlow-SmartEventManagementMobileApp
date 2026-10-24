@@ -12,7 +12,7 @@ async function upsertUser(
   email: string,
   fullName: string,
   phone: string,
-  role: "attendee" | "organizer" | "admin",
+  role: "attendee" | "organizer" | "admin" | "super_admin",
 ) {
   const hash = await bcrypt.hash(DEMO_PASSWORD, config.bcryptRounds);
   const result = await pool.query<{ id: string }>(
@@ -141,6 +141,12 @@ async function main() {
     "attendee",
   );
   await upsertUser("admin@eventflow.zm", "Platform Admin", "+260971000003", "admin");
+  await upsertUser(
+    "superadmin@eventflow.zm",
+    "Super Admin",
+    "+260971000004",
+    "super_admin",
+  );
 
   const concertId = await ensureEvent({
     organizerId,
@@ -183,6 +189,7 @@ async function main() {
   console.log("  attendee@eventflow.zm");
   console.log("  organizer@eventflow.zm");
   console.log("  admin@eventflow.zm");
+  console.log("  superadmin@eventflow.zm");
 }
 
 main()

@@ -1,0 +1,80 @@
+<%- include('partials/header') %>
+
+<section class="panel">
+  <form class="filter-bar" method="get" action="/admin/events">
+    <label class="field field-grow">
+      <span>Search</span>
+      <input type="search" name="q" value="<%= q %>" placeholder="Event, venue or organizer">
+    </label>
+    <label class="field">
+      <span>Status</span>
+      <select name="status">
+        <option value="">All statuses</option>
+        <% ['draft', 'published', 'cancelled'].forEach(function (status) { %>
+          <option value="<%= status %>" <%= statusFilter === status ? 'selected' : '' %>><%= status %></option>
+        <% }); %>
+      </select>
+    </label>
+    <div class="filter-actions">
+      <button class="button" type="submit">Filter</button>
+      <a class="button button-quiet" href="/admin/events">Reset</a>
+    </div>
+  </form>
+
+  <div class="panel-heading panel-heading-tight">
+    <div>
+      <h2><%= formatNumber(events.length) %> events</h2>
+      <p>Showing up to 100 events, newest first.</p>
+    </div>
+  </div>
+
+  <% if (events.length === 0) { %>
+    <div class="empty-state">No events match this filter.</div>
+  <% } else { %>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Event</th>
+            <th>Organizer</th>
+            <th>Schedule</th>
+            <th>Tickets</th>
+            <th>Revenue</th>
+            <th>Status</th>
+            <th class="align-right">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% events.forEach(function (event) { %>
+            <tr>
+              <td>
+                <div class="primary-cell"><%= event.title %></div>
+                <div class="secondary-cell"><%= event.venue %></div>
+              </td>
+              <td>
+                <div class="primary-cell"><%= event.organizer_name %></div>
+                <div class="secondary-cell"><%= event.organizer_email %></div>
+              </td>
+              <td class="nowrap"><%= formatDate(event.starts_at) %></td>
+              <td>
+                <div class="primary-cell"><%= formatNumber(event.sold_count) %> / <%= event.capacity === null ? '—' : formatNumber(event.capacity) %></div>
+                <div class="secondary-cell"><%= formatNumber(event.bookings_count) %> bookings</div>
+              </td>
+              <td><%= formatMoney(event.revenue_minor) %></td>
+              <td><span class="badge status-<%= event.status %>"><%= event.status %></span></td>
+              <td class="align-right">
+                <% if (event.status === 'cancelled') { %>
+                  <span class="secondary-cell">No action</span>
+                <% } else { %>
+                  <a class="button button-danger button-small" href="/admin/events/<%= event.id %>/cancel">Cancel</a>
+                <% } %>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</section>
+
+<%- include('partials/footer') %>

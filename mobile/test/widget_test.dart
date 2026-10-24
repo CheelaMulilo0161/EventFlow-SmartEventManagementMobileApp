@@ -26,6 +26,19 @@ void main() {
     expect(restored.role, user.role);
   });
 
+  test('super admins receive organizer and admin capabilities', () {
+    const user = User(
+      id: 'user-2',
+      email: 'superadmin@eventflow.zm',
+      fullName: 'Super Admin',
+      phone: '+260970000004',
+      role: 'super_admin',
+    );
+
+    expect(user.isOrganizer, isTrue);
+    expect(user.isAdmin, isTrue);
+  });
+
   test('event price label picks the cheapest ticket type', () {
     final event = Event.fromJson({
       'id': 'event-1',

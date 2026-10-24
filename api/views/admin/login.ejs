@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Sign in &middot; EventFlow Admin</title>
+  <link rel="stylesheet" href="/admin/assets/admin.css">
+</head>
+<body class="auth-body">
+  <main class="auth-card">
+    <div class="auth-brand">
+      <span class="brand-mark brand-mark-large">EF</span>
+      <span class="brand-copy">
+        <strong>EventFlow</strong>
+        <small>Super admin</small>
+      </span>
+    </div>
+
+    <h1>Control the platform.</h1>
+    <p class="auth-intro">Sign in with a super administrator account to manage users, events, bookings and the audit trail.</p>
+
+    <% if (loginError) { %>
+      <div class="flash flash-danger" role="alert"><%= loginError %></div>
+    <% } %>
+
+    <form method="post" action="/admin/login" class="stack-form">
+      <label class="field">
+        <span>Email address</span>
+        <input type="email" name="email" value="<%= email %>" autocomplete="username" required autofocus>
+      </label>
+      <label class="field">
+        <span>Password</span>
+        <input type="password" name="password" autocomplete="current-password" required>
+      </label>
+      <button class="button button-wide" type="submit">Sign in</button>
+    </form>
+
+    <p class="auth-footnote">Access is limited to super administrators. All sign-in attempts are logged.</p>
+  </main>
+</body>
+</html>

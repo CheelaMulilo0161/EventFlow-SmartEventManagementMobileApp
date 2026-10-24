@@ -1,0 +1,87 @@
+<%- include('partials/header') %>
+
+<section class="panel">
+  <form class="filter-bar" method="get" action="/admin/users">
+    <label class="field field-grow">
+      <span>Search</span>
+      <input type="search" name="q" value="<%= q %>" placeholder="Name, email or phone">
+    </label>
+    <label class="field">
+      <span>Role</span>
+      <select name="role">
+        <option value="">All roles</option>
+        <% roles.forEach(function (role) { %>
+          <option value="<%= role %>" <%= roleFilter === role ? 'selected' : '' %>><%= roleLabel(role) %></option>
+        <% }); %>
+      </select>
+    </label>
+    <div class="filter-actions">
+      <button class="button" type="submit">Filter</button>
+      <a class="button button-quiet" href="/admin/users">Reset</a>
+    </div>
+  </form>
+
+  <div class="panel-heading panel-heading-tight">
+    <div>
+      <h2><%= formatNumber(users.length) %> accounts</h2>
+      <p>Showing up to 100 accounts. Changes are recorded in the audit log.</p>
+    </div>
+  </div>
+
+  <% if (users.length === 0) { %>
+    <div class="empty-state">No accounts match this filter.</div>
+  <% } else { %>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Account</th>
+            <th>Contact</th>
+            <th>Activity</th>
+            <th>Joined</th>
+            <th>Role</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% users.forEach(function (user) { %>
+            <tr>
+              <td>
+                <div class="person-inline">
+                  <span class="avatar avatar-small"><%= user.full_name.slice(0, 1).toUpperCase() %></span>
+                  <span>
+                    <span class="primary-cell"><%= user.full_name %></span>
+                    <span class="secondary-cell"><%= user.email %></span>
+                  </span>
+                  <% if (user.id === admin.id) { %><span class="you-tag">You</span><% } %>
+                </div>
+              </td>
+              <td><%= user.phone || '—' %></td>
+              <td>
+                <span class="secondary-cell"><%= formatNumber(user.events_count) %> events</span>
+                <span class="secondary-cell"><%= formatNumber(user.bookings_count) %> bookings</span>
+              </td>
+              <td class="nowrap"><%= formatDate(user.created_at) %></td>
+              <td>
+                <% if (user.id === admin.id) { %>
+                  <span class="badge role-<%= user.role %>"><%= roleLabel(user.role) %></span>
+                <% } else { %>
+                  <form class="inline-form" method="post" action="/admin/users/<%= user.id %>/role">
+                    <input type="hidden" name="_csrf" value="<%= csrf %>">
+                    <select name="role" aria-label="Role for <%= user.email %>">
+                      <% roles.forEach(function (role) { %>
+                        <option value="<%= role %>" <%= user.role === role ? 'selected' : '' %>><%= roleLabel(role) %></option>
+                      <% }); %>
+                    </select>
+                    <button class="button button-small" type="submit">Save</button>
+                  </form>
+                <% } %>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</section>
+
+<%- include('partials/footer') %>

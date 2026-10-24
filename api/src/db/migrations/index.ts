@@ -134,4 +134,27 @@ CREATE INDEX IF NOT EXISTS tickets_booking_idx ON tickets (booking_id);
 CREATE INDEX IF NOT EXISTS tickets_booking_status_idx ON tickets (booking_id, status);
 `;
 
-export const migrations: Migration[] = [{ id: "001_initial_schema", sql: initialSchema }];
+const superAdminAndAudit = `
+ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'super_admin';
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  actor_id UUID REFERENCES users(id) ON DELETE SET NULL,
+  actor_email TEXT NOT NULL,
+  actor_role TEXT NOT NULL,
+  action TEXT NOT NULL,
+  target_type TEXT,
+  target_id TEXT,
+  details JSONB NOT NULL DEFAULT '{}'::jsonb,
+  ip TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS audit_logs_created_idx ON audit_logs (created_at DESC);
+CREATE INDEX IF NOT EXISTS audit_logs_actor_idx ON audit_logs (actor_id, created_at DESC);
+`;
+
+export const migrations: Migration[] = [
+  { id: "001_initial_schema", sql: initialSchema },
+  { id: "002_super_admin_and_audit", sql: superAdminAndAudit },
+];

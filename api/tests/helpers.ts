@@ -15,7 +15,7 @@ export async function migrateOnce() {
 
 export async function resetDatabase() {
   await pool.query(
-    `TRUNCATE TABLE webhook_events, tickets, payments, booking_items, bookings,
+    `TRUNCATE TABLE audit_logs, webhook_events, tickets, payments, booking_items, bookings,
                     ticket_types, events, users CASCADE`,
   );
 }

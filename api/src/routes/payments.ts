@@ -3,6 +3,7 @@ import { z } from "zod";
 import { pool } from "../db";
 import { config } from "../config";
 import { requireAuth } from "../auth/jwt";
+import { isPlatformAdmin } from "../auth/roles";
 import { asyncHandler } from "../http/asyncHandler";
 import { AppError } from "../http/errors";
 import { param } from "../http/params";
@@ -35,7 +36,7 @@ router.post(
       [param(req, "reference")],
     );
     if (!payment.rows[0]) throw new AppError(404, "PAYMENT_NOT_FOUND", "Payment not found");
-    if (payment.rows[0].user_id !== req.user!.id && req.user!.role !== "admin") {
+    if (payment.rows[0].user_id !== req.user!.id && !isPlatformAdmin(req.user!.role)) {
       throw new AppError(403, "FORBIDDEN", "This payment belongs to another user");
     }
 

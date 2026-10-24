@@ -1,12 +1,13 @@
 import { Router } from "express";
 import { pool } from "../db";
 import { requireAuth, requireRole } from "../auth/jwt";
+import { PLATFORM_ADMIN_ROLES, isPlatformAdmin } from "../auth/roles";
 import { asyncHandler } from "../http/asyncHandler";
 import { AppError } from "../http/errors";
 
 const router = Router();
 
-router.use(requireAuth, requireRole("organizer", "admin"));
+router.use(requireAuth, requireRole("organizer", ...PLATFORM_ADMIN_ROLES));
 
 router.get(
   "/events",
@@ -23,7 +24,7 @@ router.get(
        WHERE ($1::boolean OR e.organizer_id = $2)
        GROUP BY e.id
        ORDER BY e.starts_at DESC`,
-      [req.user!.role === "admin", req.user!.id],
+      [isPlatformAdmin(req.user!.role), req.user!.id],
     );
     res.json({ data: { events: result.rows } });
   }),
@@ -40,7 +41,7 @@ router.get(
     );
     const event = result.rows[0];
     if (!event) throw new AppError(404, "EVENT_NOT_FOUND", "Event not found");
-    if (req.user!.role !== "admin" && event.organizer_id !== req.user!.id) {
+    if (!isPlatformAdmin(req.user!.role) && event.organizer_id !== req.user!.id) {
       throw new AppError(403, "FORBIDDEN", "This event belongs to another organizer");
     }
 
@@ -72,7 +73,7 @@ router.get(
             JOIN bookings b ON b.id = t.booking_id
             JOIN events e ON e.id = b.event_id
            WHERE t.status = 'used' AND ($1::boolean OR e.organizer_id = $2)) AS checked_in`,
-      [req.user!.role === "admin", req.user!.id],
+      [isPlatformAdmin(req.user!.role), req.user!.id],
     );
     res.json({ data: { dashboard: result.rows[0] } });
   }),

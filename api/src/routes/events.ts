@@ -2,10 +2,13 @@ import { Router } from "express";
 import { z } from "zod";
 import { pool, withTransaction } from "../db";
 import { requireAuth, requireRole } from "../auth/jwt";
+import { PLATFORM_ADMIN_ROLES, isPlatformAdmin } from "../auth/roles";
+import { writeAuditLog } from "../admin/audit";
 import { asyncHandler } from "../http/asyncHandler";
 import { AppError } from "../http/errors";
 import { UserRole } from "../types/express";
 import { param } from "../http/params";
+import { cancelEventAndRelease } from "../services/events";
 
 const router = Router();
 
@@ -104,7 +107,7 @@ async function requireOwner(eventId: string, userId: string, role: UserRole) {
   );
   const event = result.rows[0];
   if (!event) throw new AppError(404, "EVENT_NOT_FOUND", "Event not found");
-  if (role !== "admin" && event.organizer_id !== userId) {
+  if (!isPlatformAdmin(role) && event.organizer_id !== userId) {
     throw new AppError(403, "FORBIDDEN", "This event belongs to another organizer");
   }
   return event;
@@ -180,7 +183,7 @@ router.get(
 router.post(
   "/",
   requireAuth,
-  requireRole("organizer", "admin"),
+  requireRole("organizer", ...PLATFORM_ADMIN_ROLES),
   asyncHandler(async (req, res) => {
     const body = eventInput.parse(req.body);
 
@@ -219,7 +222,7 @@ router.post(
 router.patch(
   "/:id",
   requireAuth,
-  requireRole("organizer", "admin"),
+  requireRole("organizer", ...PLATFORM_ADMIN_ROLES),
   asyncHandler(async (req, res) => {
     await requireOwner(param(req, "id"), req.user!.id, req.user!.role);
     const body = eventUpdateInput.parse(req.body);
@@ -266,7 +269,7 @@ router.patch(
 router.post(
   "/:id/publish",
   requireAuth,
-  requireRole("organizer", "admin"),
+  requireRole("organizer", ...PLATFORM_ADMIN_ROLES),
   asyncHandler(async (req, res) => {
     await requireOwner(param(req, "id"), req.user!.id, req.user!.role);
 
@@ -298,51 +301,34 @@ router.post(
 router.post(
   "/:id/cancel",
   requireAuth,
-  requireRole("organizer", "admin"),
+  requireRole("organizer", ...PLATFORM_ADMIN_ROLES),
   asyncHandler(async (req, res) => {
     await requireOwner(param(req, "id"), req.user!.id, req.user!.role);
 
-    await withTransaction(async (client) => {
-      await client.query(
-        "UPDATE events SET status = 'cancelled', updated_at = now() WHERE id = $1",
-        [param(req, "id")],
-      );
-      const items = await client.query<{ ticket_type_id: string; quantity: number }>(
-        `SELECT bi.ticket_type_id, SUM(bi.quantity)::int AS quantity
-         FROM booking_items bi
-         JOIN bookings b ON b.id = bi.booking_id
-         WHERE b.event_id = $1 AND b.status IN ('pending', 'confirmed')
-         GROUP BY bi.ticket_type_id`,
-        [param(req, "id")],
-      );
-      for (const item of items.rows) {
-        await client.query(
-          `UPDATE ticket_types
-           SET sold_count = GREATEST(0, sold_count - $1)
-           WHERE id = $2`,
-          [item.quantity, item.ticket_type_id],
-        );
-      }
-      await client.query(
-        `UPDATE tickets SET status = 'cancelled'
-         WHERE booking_id IN (SELECT id FROM bookings WHERE event_id = $1)`,
-        [param(req, "id")],
-      );
-      await client.query(
-        `UPDATE bookings SET status = 'cancelled', updated_at = now()
-         WHERE event_id = $1 AND status IN ('pending', 'confirmed')`,
-        [param(req, "id")],
-      );
-    });
+    const eventId = param(req, "id");
+    const cancelled = await cancelEventAndRelease(eventId);
+    const event = await getEventWithTypes(eventId);
+    if (cancelled) {
+      await writeAuditLog({
+        actorId: req.user!.id,
+        actorEmail: req.user!.email,
+        actorRole: req.user!.role,
+        action: "event.cancelled",
+        targetType: "event",
+        targetId: eventId,
+        details: { title: event?.title ?? null, source: "events_api" },
+        ip: req.ip,
+      });
+    }
 
-    res.json({ data: { event: await getEventWithTypes(param(req, "id")) } });
+    res.json({ data: { event } });
   }),
 );
 
 router.post(
   "/:id/ticket-types",
   requireAuth,
-  requireRole("organizer", "admin"),
+  requireRole("organizer", ...PLATFORM_ADMIN_ROLES),
   asyncHandler(async (req, res) => {
     await requireOwner(param(req, "id"), req.user!.id, req.user!.role);
     const body = ticketTypeInput.parse(req.body);
@@ -360,7 +346,7 @@ router.post(
 router.patch(
   "/:id/ticket-types/:ticketTypeId",
   requireAuth,
-  requireRole("organizer", "admin"),
+  requireRole("organizer", ...PLATFORM_ADMIN_ROLES),
   asyncHandler(async (req, res) => {
     await requireOwner(param(req, "id"), req.user!.id, req.user!.role);
     const body = ticketTypeUpdateInput.parse(req.body);
@@ -390,7 +376,7 @@ router.patch(
 router.get(
   "/:id/sales",
   requireAuth,
-  requireRole("organizer", "admin"),
+  requireRole("organizer", ...PLATFORM_ADMIN_ROLES),
   asyncHandler(async (req, res) => {
     await requireOwner(param(req, "id"), req.user!.id, req.user!.role);
 
@@ -443,7 +429,7 @@ router.get(
 router.get(
   "/:id/attendees",
   requireAuth,
-  requireRole("organizer", "admin"),
+  requireRole("organizer", ...PLATFORM_ADMIN_ROLES),
   asyncHandler(async (req, res) => {
     await requireOwner(param(req, "id"), req.user!.id, req.user!.role);
     const result = await pool.query(
@@ -465,7 +451,7 @@ router.get(
 router.get(
   "/:id/scan-manifest",
   requireAuth,
-  requireRole("organizer", "admin"),
+  requireRole("organizer", ...PLATFORM_ADMIN_ROLES),
   asyncHandler(async (req, res) => {
     await requireOwner(param(req, "id"), req.user!.id, req.user!.role);
     const result = await pool.query(

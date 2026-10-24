@@ -1,5 +1,6 @@
 import { withTransaction } from "../db";
 import { AppError } from "../http/errors";
+import { isPlatformAdmin } from "../auth/roles";
 import { sha256, verifyTicketToken } from "../utils/crypto";
 
 type ScanResult =
@@ -79,7 +80,7 @@ async function performScan(
     const ticket = result.rows[0];
     if (!ticket) return { status: "invalid", message: "Ticket not found" };
 
-    if (organizerRole !== "admin" && ticket.organizer_id !== organizerId) {
+    if (!isPlatformAdmin(organizerRole) && ticket.organizer_id !== organizerId) {
       throw new AppError(403, "FORBIDDEN", "This ticket belongs to another organizer's event");
     }
     if (eventId && ticket.event_id !== eventId) {

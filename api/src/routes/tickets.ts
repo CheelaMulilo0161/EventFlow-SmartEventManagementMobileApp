@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { z } from "zod";
 import { requireAuth, requireRole } from "../auth/jwt";
+import { PLATFORM_ADMIN_ROLES } from "../auth/roles";
 import { asyncHandler } from "../http/asyncHandler";
 import { param } from "../http/params";
 import { scanShortCode, scanTicket } from "../services/tickets";
@@ -32,7 +33,7 @@ const offlineInput = z.object({
 router.post(
   "/tickets/scan",
   requireAuth,
-  requireRole("organizer", "admin"),
+  requireRole("organizer", ...PLATFORM_ADMIN_ROLES),
   asyncHandler(async (req, res) => {
     const body = scanInput.parse(req.body);
     const result = await scanTicket(
@@ -48,7 +49,7 @@ router.post(
 router.post(
   "/tickets/scan-code",
   requireAuth,
-  requireRole("organizer", "admin"),
+  requireRole("organizer", ...PLATFORM_ADMIN_ROLES),
   asyncHandler(async (req, res) => {
     const body = codeScanInput.parse(req.body);
     const result = await scanShortCode(
@@ -64,7 +65,7 @@ router.post(
 router.post(
   "/events/:eventId/checkins",
   requireAuth,
-  requireRole("organizer", "admin"),
+  requireRole("organizer", ...PLATFORM_ADMIN_ROLES),
   asyncHandler(async (req, res) => {
     const body = offlineInput.parse(req.body);
     const results = [];

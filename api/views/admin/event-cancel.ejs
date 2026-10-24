@@ -1,0 +1,37 @@
+<%- include('partials/header') %>
+
+<section class="danger-panel">
+  <div class="danger-heading">
+    <span class="danger-icon">!</span>
+    <div>
+      <h2>Cancel &ldquo;<%= event.title %>&rdquo;?</h2>
+      <p>This is immediate and cannot be undone from the dashboard.</p>
+    </div>
+  </div>
+
+  <dl class="detail-grid">
+    <div><dt>Organizer</dt><dd><%= event.organizer_name %><br><span class="secondary-cell"><%= event.organizer_email %></span></dd></div>
+    <div><dt>Schedule</dt><dd><%= formatDate(event.starts_at) %></dd></div>
+    <div><dt>Location</dt><dd><%= event.venue %></dd></div>
+    <div><dt>Active bookings</dt><dd><%= formatNumber(event.active_bookings) %></dd></div>
+  </dl>
+
+  <div class="callout callout-warning">
+    Cancelling the event marks all active bookings as cancelled, invalidates their tickets,
+    releases reserved ticket capacity, and drops pending payments.
+  </div>
+
+  <form method="post" action="/admin/events/<%= event.id %>/cancel" class="stack-form">
+    <input type="hidden" name="_csrf" value="<%= csrf %>">
+    <label class="field">
+      <span>Reason (optional, stored in the audit log)</span>
+      <textarea name="reason" rows="4" maxlength="500" placeholder="Why is this event being cancelled?"></textarea>
+    </label>
+    <div class="button-row">
+      <button class="button button-danger" type="submit">Cancel event</button>
+      <a class="button button-quiet" href="/admin/events">Keep event</a>
+    </div>
+  </form>
+</section>
+
+<%- include('partials/footer') %>

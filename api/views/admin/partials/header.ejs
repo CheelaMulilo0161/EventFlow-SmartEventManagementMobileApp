@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title><%= title %> &middot; EventFlow Admin</title>
+  <link rel="stylesheet" href="/admin/assets/admin.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="/admin">
+        <span class="brand-mark">EF</span>
+        <span class="brand-copy">
+          <strong>EventFlow</strong>
+          <small>Control room</small>
+        </span>
+      </a>
+
+      <nav class="sidebar-nav" aria-label="Admin navigation">
+        <a class="nav-link <%= active === 'dashboard' ? 'is-active' : '' %>" href="/admin">
+          <span class="nav-icon">01</span> Overview
+        </a>
+        <a class="nav-link <%= active === 'users' ? 'is-active' : '' %>" href="/admin/users">
+          <span class="nav-icon">02</span> Users
+        </a>
+        <a class="nav-link <%= active === 'events' ? 'is-active' : '' %>" href="/admin/events">
+          <span class="nav-icon">03</span> Events
+        </a>
+        <a class="nav-link <%= active === 'bookings' ? 'is-active' : '' %>" href="/admin/bookings">
+          <span class="nav-icon">04</span> Bookings
+        </a>
+        <a class="nav-link <%= active === 'audit' ? 'is-active' : '' %>" href="/admin/audit">
+          <span class="nav-icon">05</span> Audit log
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="admin-identity">
+          <span class="avatar"><%= admin.full_name.slice(0, 1).toUpperCase() %></span>
+          <span class="identity-copy">
+            <strong><%= admin.full_name %></strong>
+            <small><%= admin.email %></small>
+          </span>
+        </div>
+        <form method="post" action="/admin/logout">
+          <input type="hidden" name="_csrf" value="<%= csrf %>">
+          <button class="signout" type="submit">Sign out</button>
+        </form>
+      </div>
+    </aside>
+
+    <main class="content">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Super admin</p>
+          <h1><%= title %></h1>
+          <% if (typeof subtitle !== 'undefined' && subtitle) { %>
+            <p class="subtitle"><%= subtitle %></p>
+          <% } %>
+        </div>
+        <span class="live-tag"><span class="live-dot"></span> Live data</span>
+      </header>
+
+      <% if (notice) { %>
+        <div class="flash flash-success" role="status"><%= notice %></div>
+      <% } %>
+      <% if (errorMessage) { %>
+        <div class="flash flash-danger" role="alert"><%= errorMessage %></div>
+      <% } %>

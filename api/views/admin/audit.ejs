@@ -1,0 +1,81 @@
+<%- include('partials/header') %>
+
+<section class="panel">
+  <form class="filter-bar" method="get" action="/admin/audit">
+    <label class="field field-grow">
+      <span>Search</span>
+      <input type="search" name="q" value="<%= q %>" placeholder="Actor, action or target">
+    </label>
+    <div class="filter-actions">
+      <button class="button" type="submit">Search</button>
+      <a class="button button-quiet" href="/admin/audit">Reset</a>
+    </div>
+  </form>
+
+  <div class="panel-heading panel-heading-tight">
+    <div>
+      <h2><%= formatNumber(total) %> recorded events</h2>
+      <p>Page <%= page %> of <%= pages %>. Newest first.</p>
+    </div>
+  </div>
+
+  <% if (logs.length === 0) { %>
+    <div class="empty-state">No audit entries match this filter.</div>
+  <% } else { %>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Actor</th>
+            <th>Action</th>
+            <th>Target</th>
+            <th>IP</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% logs.forEach(function (log) { %>
+            <tr>
+              <td class="nowrap"><%= formatDate(log.created_at) %></td>
+              <td>
+                <div class="primary-cell"><%= log.actor_email %></div>
+                <div class="secondary-cell"><%= log.actor_role %></div>
+              </td>
+              <td class="mono"><%= log.action %></td>
+              <td>
+                <div class="primary-cell"><%= log.target_type || '—' %></div>
+                <div class="secondary-cell mono"><%= log.target_id || '' %></div>
+              </td>
+              <td class="mono"><%= log.ip || '—' %></td>
+              <td>
+                <details class="details">
+                  <summary>View</summary>
+                  <pre><%= JSON.stringify(log.details, null, 2) %></pre>
+                </details>
+              </td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+
+    <% if (pages > 1) { %>
+      <nav class="pagination" aria-label="Audit pages">
+        <% if (page > 1) { %>
+          <a class="button button-quiet button-small" href="/admin/audit?page=<%= page - 1 %>&q=<%= encodeURIComponent(q) %>">Previous</a>
+        <% } else { %>
+          <span class="button button-quiet button-small is-disabled">Previous</span>
+        <% } %>
+        <span class="pagination-copy">Page <%= page %> of <%= pages %></span>
+        <% if (page < pages) { %>
+          <a class="button button-quiet button-small" href="/admin/audit?page=<%= page + 1 %>&q=<%= encodeURIComponent(q) %>">Next</a>
+        <% } else { %>
+          <span class="button button-quiet button-small is-disabled">Next</span>
+        <% } %>
+      </nav>
+    <% } %>
+  <% } %>
+</section>
+
+<%- include('partials/footer') %>

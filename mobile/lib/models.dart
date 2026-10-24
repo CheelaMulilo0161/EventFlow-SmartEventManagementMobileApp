@@ -34,8 +34,9 @@ class User {
   final String phone;
   final String role;
 
-  bool get isOrganizer => role == 'organizer' || role == 'admin';
-  bool get isAdmin => role == 'admin';
+  bool get isOrganizer =>
+      role == 'organizer' || role == 'admin' || role == 'super_admin';
+  bool get isAdmin => role == 'admin' || role == 'super_admin';
 
   factory User.fromJson(Map<String, dynamic> json) {
     return User(

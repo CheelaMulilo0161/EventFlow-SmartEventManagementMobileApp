@@ -1,0 +1,71 @@
+<%- include('partials/header') %>
+
+<section class="panel">
+  <form class="filter-bar" method="get" action="/admin/bookings">
+    <label class="field field-grow">
+      <span>Search</span>
+      <input type="search" name="q" value="<%= q %>" placeholder="Booking ID, buyer or event">
+    </label>
+    <label class="field">
+      <span>Status</span>
+      <select name="status">
+        <option value="">All statuses</option>
+        <% ['pending', 'confirmed', 'cancelled', 'expired'].forEach(function (status) { %>
+          <option value="<%= status %>" <%= statusFilter === status ? 'selected' : '' %>><%= status %></option>
+        <% }); %>
+      </select>
+    </label>
+    <div class="filter-actions">
+      <button class="button" type="submit">Filter</button>
+      <a class="button button-quiet" href="/admin/bookings">Reset</a>
+    </div>
+  </form>
+
+  <div class="panel-heading panel-heading-tight">
+    <div>
+      <h2><%= formatNumber(bookings.length) %> bookings</h2>
+      <p>Showing up to 100 bookings, newest first.</p>
+    </div>
+  </div>
+
+  <% if (bookings.length === 0) { %>
+    <div class="empty-state">No bookings match this filter.</div>
+  <% } else { %>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Reference</th>
+            <th>Buyer</th>
+            <th>Event</th>
+            <th>Tickets</th>
+            <th>Total</th>
+            <th>Created</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% bookings.forEach(function (booking) { %>
+            <tr>
+              <td class="mono"><%= booking.reference %></td>
+              <td>
+                <div class="primary-cell"><%= booking.full_name %></div>
+                <div class="secondary-cell"><%= booking.email %></div>
+              </td>
+              <td>
+                <div class="primary-cell"><%= booking.event_title %></div>
+                <div class="secondary-cell"><%= formatDate(booking.starts_at) %></div>
+              </td>
+              <td><%= formatNumber(booking.ticket_count) %></td>
+              <td><%= formatMoney(booking.total_minor, booking.currency) %></td>
+              <td class="nowrap"><%= formatDate(booking.created_at) %></td>
+              <td><span class="badge status-<%= booking.status %>"><%= booking.status %></span></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</section>
+
+<%- include('partials/footer') %>

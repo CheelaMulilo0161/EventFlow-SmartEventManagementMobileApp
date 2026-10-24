@@ -1,0 +1,125 @@
+<%- include('partials/header') %>
+
+<section class="stat-grid" aria-label="Platform statistics">
+  <article class="stat-card">
+    <p class="stat-label">People</p>
+    <p class="stat-value"><%= formatNumber(stats.users) %></p>
+    <p class="stat-detail"><%= formatNumber(stats.organizers) %> organizers</p>
+  </article>
+  <article class="stat-card">
+    <p class="stat-label">Events</p>
+    <p class="stat-value"><%= formatNumber(stats.events) %></p>
+    <p class="stat-detail"><%= formatNumber(stats.published_events) %> published</p>
+  </article>
+  <article class="stat-card">
+    <p class="stat-label">Bookings</p>
+    <p class="stat-value"><%= formatNumber(stats.bookings) %></p>
+    <p class="stat-detail"><%= formatNumber(stats.confirmed_bookings) %> confirmed</p>
+  </article>
+  <article class="stat-card stat-card-accent">
+    <p class="stat-label">Gross collected</p>
+    <p class="stat-value stat-value-money"><%= formatMoney(stats.gross_minor) %></p>
+    <p class="stat-detail"><%= formatNumber(stats.valid_tickets) %> valid tickets</p>
+  </article>
+</section>
+
+<section class="panel">
+  <div class="panel-heading">
+    <div>
+      <h2>Latest events</h2>
+      <p>Fresh listings and how they are performing.</p>
+    </div>
+    <a class="text-link" href="/admin/events">View all events</a>
+  </div>
+
+  <% if (recentEvents.length === 0) { %>
+    <div class="empty-state">No events have been created yet.</div>
+  <% } else { %>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Event</th>
+            <th>Organizer</th>
+            <th>Starts</th>
+            <th>Sold</th>
+            <th>Revenue</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% recentEvents.forEach(function (event) { %>
+            <tr>
+              <td>
+                <div class="primary-cell"><%= event.title %></div>
+                <div class="secondary-cell"><%= event.venue %></div>
+              </td>
+              <td><%= event.organizer_name %></td>
+              <td class="nowrap"><%= formatDate(event.starts_at) %></td>
+              <td><%= formatNumber(event.tickets_sold) %></td>
+              <td><%= formatMoney(event.revenue_minor) %></td>
+              <td><span class="badge status-<%= event.status %>"><%= event.status %></span></td>
+            </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+  <% } %>
+</section>
+
+<div class="two-column">
+  <section class="panel">
+    <div class="panel-heading">
+      <div>
+        <h2>Newest accounts</h2>
+        <p>Recent sign-ups across the platform.</p>
+      </div>
+      <a class="text-link" href="/admin/users">Manage users</a>
+    </div>
+
+    <% if (recentUsers.length === 0) { %>
+      <div class="empty-state">No accounts yet.</div>
+    <% } else { %>
+      <ul class="person-list">
+        <% recentUsers.forEach(function (user) { %>
+          <li>
+            <span class="avatar avatar-small"><%= user.full_name.slice(0, 1).toUpperCase() %></span>
+            <span class="person-copy">
+              <strong><%= user.full_name %></strong>
+              <small><%= user.email %></small>
+            </span>
+            <span class="badge role-<%= user.role %>"><%= roleLabel(user.role) %></span>
+          </li>
+        <% }); %>
+      </ul>
+    <% } %>
+  </section>
+
+  <section class="panel">
+    <div class="panel-heading">
+      <div>
+        <h2>Recent privileged activity</h2>
+        <p>Who changed what, and when.</p>
+      </div>
+      <a class="text-link" href="/admin/audit">Open audit log</a>
+    </div>
+
+    <% if (recentAudit.length === 0) { %>
+      <div class="empty-state">No privileged actions recorded yet.</div>
+    <% } else { %>
+      <ul class="activity-list">
+        <% recentAudit.forEach(function (entry) { %>
+          <li>
+            <span class="activity-dot"></span>
+            <span class="activity-copy">
+              <strong><%= entry.action %></strong>
+              <small><%= entry.actor_email %> &middot; <%= formatDate(entry.created_at) %></small>
+            </span>
+          </li>
+        <% }); %>
+      </ul>
+    <% } %>
+  </section>
+</div>
+
+<%- include('partials/footer') %>

@@ -30,9 +30,12 @@ in at the gate.
 - Check attendees in with an 8-character short code
 - View attendee lists
 
-### Admins
+### Admins and super admins
 - Use organizer features across all events
 - View platform statistics in the Profile tab
+- Super admins get a server-rendered web control room at `/admin`
+- Manage user roles, cancel events, review bookings, and inspect the audit log
+- Dashboard access uses a signed session cookie with CSRF protection and rate-limited sign-in
 
 ## Repository layout
 
@@ -40,10 +43,13 @@ in at the gate.
 eventflow/
   api/                 Express + TypeScript API
     src/
-      routes/          Auth, events, bookings, payments, tickets, organizer, admin
-      services/        Booking, payment, and ticket logic
+      routes/          Auth, events, bookings, payments, tickets, admin API and web dashboard
+      admin/           Dashboard session, CSRF, audit, and path helpers
+      services/        Booking, payment, event, and ticket logic
       db/              Connection, migration runner, schema
       scripts/         Migrate and seed commands
+    views/admin/       EJS dashboard templates
+    public/admin/      Dashboard stylesheet
     tests/             API integration tests
   mobile/              Flutter Android app
     lib/
@@ -114,6 +120,8 @@ The API listens on `0.0.0.0:3000`.
 Invoke-RestMethod http://localhost:3000/health
 ```
 
+The super admin dashboard is available at `http://localhost:3000/admin`.
+
 ### 5. Run the mobile app
 
 ```powershell
@@ -152,9 +160,11 @@ All demo accounts use the password `Password123!`.
 | Attendee | `attendee@eventflow.zm` |
 | Organizer | `organizer@eventflow.zm` |
 | Admin | `admin@eventflow.zm` |
+| Super admin | `superadmin@eventflow.zm` |
 
 The attendee account starts with a confirmed booking and two QR tickets for the seeded
-Lusaka Live Concert.
+Lusaka Live Concert. The super admin account is the only demo account that can sign in at
+`/admin`.
 
 ## Mobile API address
 
@@ -184,8 +194,8 @@ npm run typecheck
 npm test
 ```
 
-The API suite covers concurrent booking limits, idempotency, hold expiry, double scanning,
-and invalid ticket tokens.
+The API suite covers concurrent booking limits, idempotency, hold expiry, ticket scanning,
+dashboard authentication, CSRF rejection, role changes, event cancellation, and audit logs.
 
 ```powershell
 cd mobile
@@ -202,6 +212,8 @@ flutter test
 5. Log out, log in as the organizer, open **My events**, and tap **Scan**.
 6. Scan the attendee's QR code, or enter the short code under **Manual check-in**.
 7. The first scan succeeds; scanning the same ticket again reports that it was already used.
+8. Open `http://localhost:3000/admin`, sign in as `superadmin@eventflow.zm`, and review
+   users, events, bookings, and the audit log.
 
 ## More documentation
 

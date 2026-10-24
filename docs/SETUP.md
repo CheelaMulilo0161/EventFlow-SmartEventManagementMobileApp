@@ -54,12 +54,14 @@ DATABASE_URL=postgres://postgres@localhost:5433/eventflow
 TEST_DATABASE_URL=postgres://postgres@localhost:5433/eventflow_test
 JWT_SECRET=replace-with-a-long-random-secret
 TICKET_SECRET=replace-with-a-different-long-random-secret
+ADMIN_SESSION_SECRET=replace-with-a-separate-admin-session-secret
+ADMIN_SESSION_HOURS=8
 BOOKING_HOLD_MINUTES=15
 BCRYPT_ROUNDS=12
 ```
 
-Use different, random values for both secrets. They are development defaults only when
-missing, and production deployments must supply real secrets.
+Use different, random values for all three secrets. They are development defaults only
+when missing, and production deployments must supply real secrets.
 
 ## 3. Database lifecycle
 
@@ -137,6 +139,10 @@ Demo accounts:
 | Attendee | `attendee@eventflow.zm` | `Password123!` |
 | Organizer | `organizer@eventflow.zm` | `Password123!` |
 | Admin | `admin@eventflow.zm` | `Password123!` |
+| Super admin | `superadmin@eventflow.zm` | `Password123!` |
+
+Only the super admin account can sign in to the web dashboard. The mobile app gives
+`super_admin` both organizer and admin capabilities.
 
 ## 5. Run the API
 
@@ -162,6 +168,23 @@ Invoke-RestMethod http://localhost:3000/health
 The server binds to `0.0.0.0:3000`, so phones on the same network can reach it through the
 computer's LAN address. On startup it runs pending migrations and starts the booking-hold
 expiry job.
+
+### Super admin dashboard
+
+Open `http://localhost:3000/admin` and sign in as `superadmin@eventflow.zm`.
+
+The dashboard is server-rendered with EJS and includes:
+
+- Platform statistics and recent activity
+- User search and role management
+- Event search with guarded cancellation
+- Booking search and status filters
+- An audit log of privileged actions
+
+Dashboard sessions are stored in signed, HTTP-only cookies and expire after
+`ADMIN_SESSION_HOURS` (default 8). All state-changing forms require a CSRF token, and
+repeated failed sign-ins are temporarily blocked. To create another super admin, sign in
+to the dashboard and change a user's role; the API will not assign `super_admin`.
 
 ## 6. Run the Flutter app
 
@@ -258,6 +281,13 @@ Reservations hold capacity for 15 minutes. Expired holds are released by the API
 2. Open **Profile** to see platform statistics.
 3. Organizer features are available across all events.
 
+### Super admin dashboard
+
+1. Open `http://localhost:3000/admin` in a browser.
+2. Sign in as `superadmin@eventflow.zm`.
+3. Review platform totals, user roles, events, and bookings.
+4. Open **Audit log** to see dashboard sign-ins, role changes, and event cancellations.
+
 ## 9. Useful commands
 
 | Command | Purpose |
@@ -335,16 +365,17 @@ This project is configured for a local demo:
 - Payment confirmation is simulated in the app and API.
 - API secrets fall back to development values if not supplied.
 - Release APKs are signed with the Android debug key.
-- CORS is open by default for local development.
-- The admin API exposes user and event management endpoints without a separate
-  administration UI.
+- CORS is enabled for `/api` for local development.
+- The dashboard uses a signed session cookie and CSRF protection, but it is served over
+  HTTP locally. Use HTTPS and set `ADMIN_SESSION_SECRET` before exposing it publicly.
 
 Before production use:
 
 1. Use a managed PostgreSQL instance with strong authentication and TLS.
-2. Replace JWT and ticket secrets with secret-manager values.
+2. Replace JWT, ticket, and admin session secrets with secret-manager values.
 3. Replace the simulated payment adapter with a real provider and verify webhooks.
-4. Add rate limiting, structured logging, and alerting.
+4. Add broader rate limiting, structured logging, and alerting.
 5. Configure a private release keystore and Play Store signing.
 6. Restrict CORS to known origins.
-7. Add backup, restore, and database migration procedures.
+7. Serve the dashboard over HTTPS and keep `/admin` behind a trusted network or SSO proxy.
+8. Add backup, restore, and database migration procedures.

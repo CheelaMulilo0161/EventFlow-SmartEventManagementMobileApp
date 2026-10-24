@@ -4,6 +4,7 @@ import { config } from "../config";
 import { pool, withTransaction } from "../db";
 import { AppError } from "../http/errors";
 import { createShortCode, createTicketToken, sha256 } from "../utils/crypto";
+import { isPlatformAdmin } from "../auth/roles";
 
 export type BookingItemInput = {
   ticket_type_id: string;
@@ -171,7 +172,7 @@ export async function getBookingForUser(
 ) {
   const booking = await getBookingView(pool, bookingId);
   if (!booking) throw new AppError(404, "BOOKING_NOT_FOUND", "Booking not found");
-  if (role !== "admin" && booking.user_id !== userId) {
+  if (!isPlatformAdmin(role) && booking.user_id !== userId) {
     throw new AppError(403, "FORBIDDEN", "This booking belongs to another user");
   }
   return booking;
@@ -334,7 +335,7 @@ export async function cancelBooking(bookingId: string, userId: string, role: str
     );
     const booking = result.rows[0];
     if (!booking) throw new AppError(404, "BOOKING_NOT_FOUND", "Booking not found");
-    if (role !== "admin" && booking.user_id !== userId) {
+    if (!isPlatformAdmin(role) && booking.user_id !== userId) {
       throw new AppError(403, "FORBIDDEN", "This booking belongs to another user");
     }
     if (booking.status === "cancelled" || booking.status === "expired") return;
@@ -412,7 +413,7 @@ export async function initiatePayment(input: {
     currency: string;
   } | null;
   if (!booking) throw new AppError(404, "BOOKING_NOT_FOUND", "Booking not found");
-  if (input.role !== "admin" && booking.user_id !== input.userId) {
+  if (!isPlatformAdmin(input.role) && booking.user_id !== input.userId) {
     throw new AppError(403, "FORBIDDEN", "This booking belongs to another user");
   }
   if (booking.status === "cancelled" || booking.status === "expired") {

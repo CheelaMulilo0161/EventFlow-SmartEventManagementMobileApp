@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <title><%= title %> &middot; EventFlow Admin</title>
+  <link rel="stylesheet" href="/admin/assets/admin.css">
+</head>
+<body class="auth-body">
+  <main class="auth-card">
+    <div class="auth-brand">
+      <span class="brand-mark brand-mark-large">EF</span>
+      <span class="brand-copy">
+        <strong>EventFlow</strong>
+        <small>Super admin</small>
+      </span>
+    </div>
+
+    <h1><%= title %></h1>
+    <p class="auth-intro"><%= message %></p>
+
+    <div class="button-row">
+      <% if (admin) { %>
+        <a class="button" href="/admin">Back to dashboard</a>
+      <% } else { %>
+        <a class="button" href="/admin/login">Back to sign in</a>
+      <% } %>
+    </div>
+  </main>
+</body>
+</html>
